@@ -1,0 +1,264 @@
+---
+title: "Bike Share Data Analysis"
+author: "Joram Hofman"
+date: "5-9-2021"
+output: pdf_document
+latex_engine: xelatex
+sansfont: Calibri Light
+toc: TRUE
+fontsize: 12pt
+---
+
+\newpage
+# Case study: Cyclistic bike share analyse
+
+Belangrijk:    
+* Deze case study is gebaseerd op data over de periode van april 2019   
+  tot en met maart 2020.      
+* De data betreft 'gemiddelde ritduur' is geaggregeerd in de tijdseenheid seconde. Voor de leesbaarheid van deze analyse worden deze waarden       
+  omgerekend naar minuten. 
+
+## De organisatie
+Cyclistic begon in 2016 met een succesvol programma voor het delen van fietsen. Sindsdien is het programma geëvolueerd naar een vloot van 5.824 fietsen die geo-getrackt en vergrendeld zijn in een netwerk van 692 stations in Chicago, Amerika. 
+
+Fietsen kunnen op elk moment worden ontgrendeld en teruggebracht naar elk ander station in het systeem. Tot voor kort was de marketingstrategie van Cyclistic gericht op het vergroten van het algemene bewustzijn en het aanspreken van een breed scala aan consumenten. De flexibiliteit van zijn tariefplannen, waaronder passen voor één rit, dagpassen en jaarlidmaatschappen, was een strategie die deze dingen mogelijk maakte.
+
+De klanten van Cyclistic kunnen worden ingedeeld in twee categorieën.
+1. Casuals: klanten die passen voor een enkele rit of een hele dag kopen, worden Casual fietsers genoemd.  
+2. Members: klanten die jaarabonnementen afnemen zijn Cyclistic-leden, oftewel Members.
+
+## Het business probleem
+Financiële analisten van Cyclistic kwamen tot de conclusie dat over de periode van Q2 2019 tot en met Q1 2020, members veel winstgevender zijn dan casual fietsers. Volgens CMO Lily Moreno is het maximaliseren van het aantal jaarlijkse leden de sleutel zal zijn tot toekomstige groei. Ze gelooft ook dat in plaats van een marketingcampagne te creëren die gericht is op geheel nieuwe klanten, er een zeer goede kans is om casual fietsers om te zetten in Cyclistic leden.
+
+Om dit doel te bereiken dienen de volgende twee business vragen te worden beantwoord:
+1. Wat zijn de verschillen in het gebruik van Cyclistic fietsen tussen Members en 
+   Casual fietsers?  
+2. Hoe kan Cyclistic digitale media gebruiken om Casual fietsers te beïnvloeden om lid te worden?
+
+## Mijn rol
+Aan de hand van de twee business vragen, historische Cyclistic fiets-data analyseren om trends te identificeren en zo Casual fietsers 
+te converteren naar Members.
+
+```{r, include=FALSE}
+library(tidyverse)  
+library(lubridate)
+library(ggplot2) 
+library(ggthemes)
+library(tinytex)
+
+setwd("/Users/joramhofm/Desktop/GDAPC/Archive/Cyclistic Bike Share Data Analysis")
+getwd()
+```
+
+```{r, include=FALSE}
+bike_share_analysis <- read_csv("/Users/joramhofm/Desktop/GDAPC/Archive/Cyclistic Bike Share Data Analysis/Cyclistic Data.csv")
+```
+
+```{r, include=FALSE}
+# Voer eventueel basis statistiek uit betreft de ritduur van "members" en "casual" fietsers
+aggregate(bike_share_analysis$ride_length ~ bike_share_analysis$type_fietser, FUN = mean)
+aggregate(bike_share_analysis$ride_length ~ bike_share_analysis$type_fietser, FUN = median)
+aggregate(bike_share_analysis$ride_length ~ bike_share_analysis$type_fietser, FUN = max)
+aggregate(bike_share_analysis$ride_length ~ bike_share_analysis$type_fietser, FUN = min)
+```
+
+# Analyse van de historische fiets-data
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+bike_share_analysis %>%
+  group_by(type_fietser) %>%
+  summarise(average_duration = mean(ride_length)) %>%
+  ggplot(aes(x = type_fietser, y = average_duration, fill = type_fietser)) +
+  geom_col(position = "dodge") + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0,4000), labels = function(x) format(x, scientific = FALSE)) +
+  scale_x_discrete(expand = c(0, 0)) +
+  labs(title = "Gemiddelde ritduur per type fietser (in seconden)", 
+       x = "Type fietser",
+       y = "Gemiddelde ritduur") +
+  theme_fivethirtyeight() +
+  theme(plot.title = element_text(size = 13.5, hjust = -3), axis.title.y = element_text(margin = margin(0, 15, 0, 0)), 
+        axis.title.x = element_text(margin = margin(10, 15, 0)), axis.line = element_line(), 
+        panel.grid.major = element_blank(),legend.position = "right") +
+  guides(fill = guide_legend(title.theme = element_text( size = 10.5), title.position = "top"))
+```
+
+## Gemiddelde ritduur van Casual fietsers en Members       
+De gemiddelde ritduur van Casuals is 59 minuten.
+De gemiddelde ritduur van Members is 14 minuten.
+Dit houdt in dat de gemiddelde ritduur van Casuals ruim 4 (4,2) keer zo lang is als die van members.
+Een verklaring voor dit verschil kan zijn dat casual fietsers de fiets gebruiken voor sight seeing en Members voor het pendelen. 
+Dit ligt ook in lijn met het profiel van de twee klantgroepen, zoals eerder benoemd onder het kopje 'De organisatie'. 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# Visualiseer het aantal ritten die "members"en "casual" rijders gemaakt hebben.  
+bike_share_analysis %>%
+  group_by(type_fietser) %>%
+  summarise(number_of_trips = n()) %>% 
+  ggplot(aes(x = type_fietser, y = number_of_trips, fill = type_fietser)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(expand = c(0, 0), limits = c(0,4000000), labels = function(x) format(x, scientific = FALSE)) + 
+  scale_x_discrete(expand = c(0, 0)) +
+  labs(title = "Aantal ritten per type fietser",
+           x = "Type fietser",
+           y = "Aantal ritten") +
+  theme_fivethirtyeight() +
+  theme(plot.title = element_text(size = 13.5, hjust = 0.6), axis.title.y = element_text(margin = margin(0, 15, 0, 0)), 
+        axis.title.x = element_text(margin = margin(10, 15, 0)), axis.ticks = element_line(), axis.line = element_line(),    
+        panel.grid.major= element_blank(),
+        legend.position = "right") +
+  guides(fill = guide_legend(title.theme = element_text( size = 10.5), title.position = "top"))
+```
+
+## Aantal ritten gereden door Casual fietsers en Members
+Members reden drie keer (3,2) het aantal ritten dat de Casuals gereden hebben.
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+bike_share_analysis$day_of_week <- factor(bike_share_analysis$day_of_week, levels = c("maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag",     "zondag"))
+bike_share_analysis %>%
+  group_by(type_fietser, day_of_week) %>%
+  summarise(number_of_trips = n(), average_duration = mean(ride_length)) %>%
+  arrange(type_fietser,day_of_week) %>%
+  ggplot(aes(x = day_of_week, y = number_of_trips, fill = type_fietser)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(expand = c(0, 0), limits = c(0,600000), labels = function(x) format(x, scientific = FALSE)) + 
+  labs(title = "Aantal ritten per dag van de week", 
+           x = "Dag van de week",
+           y = "Aantal ritten") +
+  theme_fivethirtyeight() +
+  theme(plot.title = element_text(size = 13.5, hjust = 0.5), axis.title.y = element_text(margin = margin(0, 15, 0, 0)), 
+        axis.title.x = element_text(margin = margin(10, 15, 0, 0)), axis.ticks = element_line(), axis.line = element_line(), 
+        panel.grid.major = element_blank(),
+        legend.position = "bottom") +
+  guides(fill = guide_legend(title.theme = element_text( size = 10.5), title.position = "top"))
+  #theme_get()$plot.margin shows the plot needs more space for position.legend = "right". how to change plot.margin so legend fits on right side?
+```
+  
+## Aantal ritten per dag van de week  
+Members rijden meer tijdens werkdagen en beduidend minder in het weekend.
+Bij Casuals is dit andersom; zij maken meer ritten in het weekend en beduidend minder ritten tijdens werkdagen. 
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+bike_share_analysis %>%
+  group_by(type_fietser, day_of_week) %>%
+  summarise(number_of_trips = n(), average_duration = mean(ride_length)) %>%
+  arrange(type_fietser, day_of_week) %>%
+  ggplot(aes(x = day_of_week, y = average_duration, fill = type_fietser)) +
+  geom_col(position = "dodge") +
+  labs(title = "Gemiddelde ritduur per dag van de week", 
+           x = "Dag van de week",
+           y = "Gemiddelde ritduur") +
+    scale_y_continuous(expand = c(0, 0), limits = c(0,4000), labels = function(x) format(x, scientific = FALSE)) +
+  scale_x_discrete(expand = c(0, 0)) +
+  theme_fivethirtyeight() +
+  theme(plot.title = element_text(size = 13.5, hjust = 0.5), axis.title.y = element_text(margin = margin(0, 15, 0, 0)), 
+        axis.title.x = element_text(margin = margin(10, 15, 0)), axis.ticks = element_line(), axis.line = element_line(), 
+  panel.grid.major = element_blank(),
+  legend.position = "bottom") +
+  guides(fill = guide_legend(title.theme = element_text( size = 10.5), title.position = "top"))
+```
+
+## De gemiddelde ritduur per dag van de week  
+De gemiddelde ritduur per type fietser, per dag van de week ligt relatief dicht bij elkaar. 
+Als we deze grafiek vergelijken met de vorige grafiek 'Aantal ritten per dag van de week', springt het volgende in het oog:
+Casuals maken op de zaterdag het meeste aantal ritten. Maar de gemiddelde ritduur van Casuals is  op deze dag, samen met die op de maandag, het laagst.
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+bike_share_analysis %>%
+  group_by(type_fietser, hour_of_day) %>%
+  summarise(number_of_trips = n(), average_duration = mean(ride_length)) %>%
+  arrange(type_fietser, hour_of_day) %>%
+  ggplot(aes(x = hour_of_day, y = number_of_trips, fill = type_fietser)) +
+  geom_col(width = 0.4, position = "dodge") +
+  labs(title = "Aantal ritten per uur van de dag", 
+           x = "Uur van de dag",
+           y = "Aantal ritten") +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 430000), labels = function(x) format(x, scientific = FALSE)) +
+  theme_fivethirtyeight() +
+  theme(plot.title = element_text(size = 13.5, hjust = 0.5), axis.title.y = element_text(margin = margin(0, 15, 0, 0)), 
+        axis.title.x = element_text(margin = margin(10, 15, 0)), axis.ticks = element_line(), axis.line = element_line(), 
+        panel.grid.major = element_blank(),
+        legend.position = "bottom") +
+  guides(fill = guide_legend(title.theme = element_text( size = 10.5), title.position = "top"))
+```
+  
+## Het aantal ritten per uur van de dag  
+Eerder is er geconstateert dat Members meer ritten door de weeks maken dan in het weekend. 
+De graiek hierboven toont aan dat Members de meeste ritten maken tijdens de ochtend en avondspits (tussen 06:30-09:30 en 15:30-19:00). 
+Daarnaast toont de grafiek een duidelijk zichtbare trend van Casuals die de meeste ritten maken tussen het einde van de ochtend en het einde van de middag. 
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+bike_share_analysis %>%
+  group_by(type_fietser, month) %>%
+  summarise(number_of_trips = n(), average_duration = mean(ride_length)) %>%
+  arrange(type_fietser, month) %>%
+  ggplot(aes(x = month, y = number_of_trips, fill = type_fietser)) +
+  geom_col(width = 0.5, position = "dodge") +
+  labs(title = "Aantal ritten per maand", 
+       caption = "Q2 t/m Q4 2019 en Q1 2020",       
+             x = "Maand",
+             y = "Aantal ritten") +
+  scale_y_continuous(expand = c(0, 0), limits = c(0,450000), labels = function(x) format(x, scientific = FALSE)) +
+  theme_fivethirtyeight() +
+  theme(plot.title = element_text(size = 13.5, hjust = 0.5), axis.title.y = element_text(margin = margin(0, 15, 0, 0)), 
+        axis.title.x = element_text(margin = margin(10, 15, 0)), axis.ticks = element_line(), axis.line = element_line(), 
+        panel.grid.major = element_blank(),
+        legend.position = "bottom") +
+  guides(fill = guide_legend(title.theme = element_text( size = 10.5), title.position = "top"))
+```
+
+## Aantal ritten per type fietser per maand  
+De grafiek laat met een duidelijk zichtbare trend, voor beide type fietsers zien dat er het meest wordt gefietst in het zomer seizoen, waarbij augustus en juli de meest populaire maanden zijn.
+
+\newpage 
+
+# De oplossing: het beantwoorden van de business vragen
+
+
+## Business vraag 1: Wat zijn de verschillen in het gebruik van Cyclistic fietsen tussen Members en Casual fietsers?
+
+ **Conclusies**
+ 
+   * De gemiddelde ritduur van Casuals is 59 minuten. De gemiddelde ritduur van Members is 14 minuten. 
+     Dit houdt in dat Casuals gemiddeld 45 minuten langer fietsen per fietsrit dan Members.
+ 
+   * Casuals maken de meeste ritten in het weekend, tussen het einde van de ochtend en het einde van de middag. 
+     Daarnaast koopt dit type klant een pas voor één enkele rit of een hele dag.
+     Dit kan betekenen dat Casuals Cyclistic fietsen voornamelijk worden gebruikt door toeristen, studenten, koppels, gepensioneerden.
+  
+   * Members maken de meeste ritten doordeweeks en tussen de ochtend en avondspits. 
+     Dit kan betekenen dat Members Cyclystic fietsen voornamelijk gebruiken voor woon-werk of woon-school reizen.
+ 
+   * Het meest populaire seizoen om te fietsen is voor Casuals en Members de zomer, met de maanden juli en augustus als de twee meest populaire fietsmaanden.
+ 
+\newpage
+
+## Business vraag 2: Hoe kan Cyclistic digitale media gebruiken om Casual fietsers te beïnvloeden om lid te worden?
+ 
+ **Aanbevelingen**
+ 
+   1.  De beste periode voor het inzetten van digitale media is tijdens het zomer seizoen, specifiek de maanden juli en augustus.
+       Tijdens deze periode worden de meeste Casual passen verkocht en zitten er het meeste aantal Casual klanten op de Cyclistic fietsen van het jaar.  
+   2.  Stel surveys samen specifiek gericht op Casuals. Met als doel om erachter te komen wat voor hen redenen zouden zijn om Cyclistic fietsen ook
+       doordeweeks en op welke uren van de dag te gebruiken. Met als doel klanten van éénmalige ritten / dagritten naar frequentere afname van Cyclistic
+       fietsen te bewegen.   
+   3.  Wanneer je de survey informatie hebt, kun je een gerichte marketing strategie opzetten en digitale media inzetten.  
+       Voorbeeld van content betreft het inzetten van digitale media:       
+       Stuur Casuals tijdens het zomer seizoen in het weekend (drukste periode in het jaar en in de week) een digitale flyer met de voordelen van het
+       afsluiten van een jaar abonnement. Met een bericht dat Cyclistic fietsen naast recreatie in het weekend ook dagelijks gebruikt kan worden voor
+       bijvoorbeeld woon-werk of woon-school reizen. Gezond en file stress-vrij! Maak het overstappen naar frequentere afname laagdrempelig door tijdelijke          aanbiedingen/ kortingen voor het afnemen van een Cyclistic jaar abonnement.
+ 
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
